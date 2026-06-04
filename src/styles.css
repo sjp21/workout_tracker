@@ -385,6 +385,9 @@ header {
   margin-bottom: 10px;
 }
 .auth-card input:focus { outline: none; border-color: var(--accent); }
+.auth-card .add-btn.secondary {
+  background: transparent; border: 1px solid var(--line); color: var(--ink-dim); margin-top: 8px;
+}
 .auth-msg { font-size: 11px; color: var(--accent-2); margin-top: 8px; min-height: 16px; }
 .auth-msg.ok { color: var(--ok); }
 .sync-indicator { font-size: 9px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.15em; }

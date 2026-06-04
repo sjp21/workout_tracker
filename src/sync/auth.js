@@ -1,30 +1,33 @@
 import { supabase, isConfigured, ALLOWED_EMAIL } from './supabase.js';
 
-// Email OTP — 6-digit code via email, NOT magic link. Magic link breaks on iOS
-// standalone PWAs because tapping the link in Mail opens Safari (not the
-// installed PWA), splitting the session into the wrong context. OTP keeps the
-// session in whichever browser context the user is currently in.
+// Email + password auth. Single-user: only the allowlisted address may sign in.
+// Chosen over email OTP / magic link because both need email delivery the
+// built-in Supabase sender can't customize without SMTP, and links break on
+// iOS standalone PWAs (tapping in Mail opens Safari, splitting the session).
+// Password needs no email at all once the account exists — provided email
+// confirmation is disabled in the Supabase Auth settings so sign-up is instant.
 
-export async function sendOtp(email) {
-  if (!isConfigured()) throw new Error('Supabase not configured');
+function assertAllowed(email) {
   if (email.trim().toLowerCase() !== ALLOWED_EMAIL.toLowerCase()) {
     throw new Error('This app is single-user. That email is not on the allowlist.');
   }
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: { shouldCreateUser: true }
-  });
-  if (error) throw error;
 }
 
-export async function verifyOtp(email, token) {
+export async function signIn(email, password) {
   if (!isConfigured()) throw new Error('Supabase not configured');
-  const { data, error } = await supabase.auth.verifyOtp({
-    email,
-    token,
-    type: 'email'
-  });
+  assertAllowed(email);
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) throw error;
+  return data.session;
+}
+
+export async function signUp(email, password) {
+  if (!isConfigured()) throw new Error('Supabase not configured');
+  assertAllowed(email);
+  const { data, error } = await supabase.auth.signUp({ email, password });
+  if (error) throw error;
+  // With email confirmation disabled, a session comes back immediately.
+  // If it's still enabled, session is null until the user confirms by email.
   return data.session;
 }
 

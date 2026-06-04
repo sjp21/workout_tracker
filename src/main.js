@@ -170,7 +170,13 @@ async function boot() {
           });
         }
       });
-      if (overlay) document.querySelector('.container').appendChild(overlay);
+      if (overlay) {
+        // Place the card directly under the header so it's the first thing seen,
+        // not appended below the fold under the day's content.
+        const container = document.querySelector('.container');
+        const header = container.querySelector('header');
+        container.insertBefore(overlay, header.nextSibling);
+      }
     }
     onAuthChange((s) => {
       if (!s) {
