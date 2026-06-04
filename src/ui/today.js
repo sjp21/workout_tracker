@@ -15,6 +15,15 @@ export function renderToday({ goTrain, goFuel }) {
   view.querySelectorAll('[data-action="goTrain"]').forEach((el) => el.addEventListener('click', goTrain));
   view.querySelectorAll('[data-action="goFuel"]').forEach((el) => el.addEventListener('click', goFuel));
 
+  // Start the rotation over at Day 1 — Push. Resets only the "next workout"
+  // cursor; logged history stays untouched ("save the current week as is").
+  view.querySelectorAll('[data-action="resetWeek"]').forEach((el) => el.addEventListener('click', () => {
+    if (!confirm('Start the week over at Day 1 — Push?\n\nYour logged history is kept; this only resets which workout comes next.')) return;
+    ctx.state.currentDayIdx = 0;
+    ctx.commit();
+    renderToday({ goTrain, goFuel });
+  }));
+
   const bwBtn = view.querySelector('#logBwBtn');
   if (bwBtn) bwBtn.addEventListener('click', () => {
     const input = view.querySelector('#bwInput');
@@ -96,6 +105,7 @@ function renderTrainingCard() {
       <div class="tc-body">${day.focus}</div>
       <div class="tc-stat" style="margin-top:8px;">${doneSets}<span class="unit">/ ${totalSets} sets</span></div>
       <button class="tc-action primary" data-action="goTrain">${doneSets > 0 ? 'Continue session' : 'Start session'}</button>
+      <button class="tc-action" data-action="resetWeek">Start week over</button>
     </div>
   `;
 }

@@ -3,7 +3,7 @@ import './styles.css';
 import { ctx } from './ui/ctx.js';
 import { load, save } from './storage/index.js';
 import { shouldImport, readLegacy, legacyToState, markImported } from './storage/importer.js';
-import { renderTabs, renderDay, saveSession } from './ui/train.js';
+import { openTrain, saveSession } from './ui/train.js';
 import { renderFuel } from './ui/fuel.js';
 import { renderToday } from './ui/today.js';
 import { setupModal, openGuide, openHistory } from './ui/modals.js';
@@ -103,8 +103,7 @@ function switchMode(mode) {
 
   if (mode === 'today') renderToday({ goTrain: () => switchMode('train'), goFuel: () => switchMode('fuel') });
   else if (mode === 'train') {
-    renderTabs();
-    renderDay();
+    openTrain();
   } else if (mode === 'fuel') {
     renderFuel({ openHistory });
   }

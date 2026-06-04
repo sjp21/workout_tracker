@@ -1,12 +1,28 @@
 import { PROGRAM } from '../data/program.js';
 import { suggestNext } from '../lib/progression.js';
+import { nextDayIdx } from '../lib/rotation.js';
 import * as rest from './restTimer.js';
 import { ctx } from './ctx.js';
+
+// Which day the Train tab is currently *showing*. Ephemeral and in-memory:
+// browsing the day tabs must not move the persisted `currentDayIdx` cursor,
+// which only advances on a saved session or "start week over". Train opens to
+// the cursor (see openTrain) and lets you peek at other days without disturbing
+// what "today's training" points at.
+let viewDayIdx = 0;
+
+// Sync the view to the persisted cursor and render the Train tab. Called when
+// the Train tab is entered so it always opens on the next workout to do.
+export function openTrain() {
+  viewDayIdx = ctx.state.currentDayIdx;
+  renderTabs();
+  renderDay();
+}
 
 export function renderTabs() {
   const tabs = document.getElementById('dayTabs');
   tabs.innerHTML = PROGRAM.map((d, i) => `
-    <button class="day-tab ${i === ctx.state.currentDayIdx ? 'active' : ''}" data-day-idx="${i}">
+    <button class="day-tab ${i === viewDayIdx ? 'active' : ''}" data-day-idx="${i}">
       <span class="day-num">${i + 1}</span>
       ${d.name}
     </button>
@@ -18,15 +34,14 @@ export function renderTabs() {
 
 function switchDay(i) {
   rest.stop();
-  ctx.state.currentDayIdx = i;
-  ctx.commit();
+  viewDayIdx = i;
   renderTabs();
   renderDay();
   window.scrollTo(0, 0);
 }
 
 export function renderDay() {
-  const day = PROGRAM[ctx.state.currentDayIdx];
+  const day = PROGRAM[viewDayIdx];
   const view = document.getElementById('dayView');
 
   day.exercises.forEach((ex) => {
@@ -144,7 +159,7 @@ function toggleSet(exId, setIdx) {
   ctx.commit();
   const row = document.getElementById(`set-${exId}-${setIdx}`);
   row.classList.toggle('done');
-  const day = PROGRAM[ctx.state.currentDayIdx];
+  const day = PROGRAM[viewDayIdx];
   const totalSets = day.exercises.reduce((a, e) => a + e.sets, 0);
   const doneSets = day.exercises.reduce((a, e) => a + ctx.state.currentSession[e.id].filter((set) => set.done).length, 0);
   const metaVals = document.querySelectorAll('.session-meta .val');
@@ -161,7 +176,7 @@ function toggleSet(exId, setIdx) {
 
 export function saveSession({ onSaved }) {
   rest.stop();
-  const day = PROGRAM[ctx.state.currentDayIdx];
+  const day = PROGRAM[viewDayIdx];
   const date = new Date().toISOString().slice(0, 10);
   let saved = 0;
   day.exercises.forEach((ex) => {
@@ -175,7 +190,15 @@ export function saveSession({ onSaved }) {
     }
   });
   ctx.state.currentSession = {};
+  // Advance the rotation cursor to the next day after the one just completed,
+  // wrapping Upper → Push. The cursor is what "today's training" reads, so this
+  // is what makes the next session follow the sequence regardless of weekday.
+  if (saved > 0) {
+    ctx.state.currentDayIdx = nextDayIdx(viewDayIdx, PROGRAM.length);
+  }
   ctx.commit();
+  viewDayIdx = ctx.state.currentDayIdx;
+  renderTabs();
   renderDay();
   if (onSaved) onSaved(saved);
 }
