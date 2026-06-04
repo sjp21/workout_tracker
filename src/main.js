@@ -7,7 +7,7 @@ import { renderTabs, renderDay, saveSession } from './ui/train.js';
 import { renderFuel } from './ui/fuel.js';
 import { renderToday } from './ui/today.js';
 import { setupModal, openGuide, openHistory } from './ui/modals.js';
-import { renderAuthOverlay } from './ui/auth.js';
+import { renderAuthOverlay, isLocalOnly, clearLocalOnly } from './ui/auth.js';
 import { isConfigured, supabase } from './sync/supabase.js';
 import { getSession, onAuthChange, signOut } from './sync/auth.js';
 import { queue, pullRemoteIntoState, startFlusher, onSyncStatus } from './sync/flusher.js';
@@ -155,29 +155,10 @@ async function boot() {
   // but still render the app so the user can interact local-only.
   if (isConfigured()) {
     const session = await getSession();
-    if (!session) {
-      const overlay = renderAuthOverlay({
-        onSession: () => {
-          document.querySelectorAll('.auth-card').forEach((el) => el.remove());
-          // Re-pull and re-render after sign-in
-          pullRemoteIntoState(ctx.state).then(async (remote) => {
-            if (remote && remote !== ctx.state) {
-              ctx.state = remote;
-              await save(remote);
-            }
-            updateSyncIndicator();
-            switchMode(currentMode);
-          });
-        }
-      });
-      if (overlay) {
-        // Place the card directly under the header so it's the first thing seen,
-        // not appended below the fold under the day's content.
-        const container = document.querySelector('.container');
-        const header = container.querySelector('header');
-        container.insertBefore(overlay, header.nextSibling);
-      }
-    }
+    // isLocalOnly(): the user chose "Continue without account" before. Honor it
+    // and never show the auth card again until they clear it (e.g. via the
+    // guide's "Sign in / sync" entry, which calls mountAuthCard directly).
+    if (!session && !isLocalOnly()) mountAuthCard();
     onAuthChange((s) => {
       if (!s) {
         // signed out; just re-render same mode
@@ -190,12 +171,51 @@ async function boot() {
   switchMode(state.mode === 'fuel' ? 'fuel' : state.mode === 'train' ? 'train' : 'today');
 }
 
+// Render the sign-in card under the header. Used on cold start when there's no
+// session, and again when the user reconnects via the guide's "Sign in / sync"
+// entry. Guards against mounting a second card if one is already showing.
+function mountAuthCard() {
+  if (document.querySelector('.auth-card')) return;
+  const overlay = renderAuthOverlay({
+    onSession: () => {
+      document.querySelectorAll('.auth-card').forEach((el) => el.remove());
+      // Re-pull and re-render after sign-in
+      pullRemoteIntoState(ctx.state).then(async (remote) => {
+        if (remote && remote !== ctx.state) {
+          ctx.state = remote;
+          await save(remote);
+        }
+        updateSyncIndicator();
+        switchMode(currentMode);
+      });
+    },
+    onLocalOnly: () => {
+      // Card already removed itself; just refresh the current view.
+      switchMode(currentMode);
+    }
+  });
+  if (!overlay) return;
+  // Place the card directly under the header so it's the first thing seen,
+  // not appended below the fold under the day's content.
+  const container = document.querySelector('.container');
+  const header = container.querySelector('header');
+  container.insertBefore(overlay, header.nextSibling);
+}
+
 function bindNav() {
   document.querySelectorAll('.mode-btn').forEach((el) => {
     el.addEventListener('click', () => switchMode(el.dataset.mode));
   });
   document.getElementById('navHistory').addEventListener('click', openHistory);
-  document.getElementById('navGuide').addEventListener('click', openGuide);
+  document.getElementById('navGuide').addEventListener('click', () => {
+    openGuide({
+      // Only meaningful in local-only mode; the guide shows the entry then.
+      onReconnect: () => {
+        clearLocalOnly();
+        mountAuthCard();
+      }
+    });
+  });
   document.getElementById('navSave').addEventListener('click', () => {
     saveSession({
       onSaved: (n) => alert(`Saved ${n} exercises. Next session's weights will auto-adjust.`)

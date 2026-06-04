@@ -4,9 +4,37 @@ import { isConfigured } from '../sync/supabase.js';
 // Login overlay. If Supabase isn't configured (no env vars), we skip auth
 // entirely and run the app local-only — same data, no cloud copy. Single-user
 // email + password: "Sign in" for the returning case, "Create account" for the
-// one-time first setup.
+// one-time first setup. "Continue without account" opts out of sync and runs
+// local-only, remembered across sessions via localStorage.
 
-export function renderAuthOverlay({ onSession }) {
+const LOCAL_ONLY_KEY = 'stimulus.localOnly';
+
+export function isLocalOnly() {
+  try {
+    return localStorage.getItem(LOCAL_ONLY_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function setLocalOnly() {
+  try {
+    localStorage.setItem(LOCAL_ONLY_KEY, '1');
+  } catch {
+    // localStorage unavailable (private mode); the card just won't persist
+    // its dismissal, which is acceptable — the app still runs local-only.
+  }
+}
+
+export function clearLocalOnly() {
+  try {
+    localStorage.removeItem(LOCAL_ONLY_KEY);
+  } catch {
+    // ignore; see setLocalOnly.
+  }
+}
+
+export function renderAuthOverlay({ onSession, onLocalOnly }) {
   if (!isConfigured()) return null;
 
   const el = document.createElement('div');
@@ -18,6 +46,7 @@ export function renderAuthOverlay({ onSession }) {
     <input type="password" id="passwordInput" placeholder="password" autocomplete="current-password" />
     <button class="add-btn" id="signInBtn">Sign In</button>
     <button class="add-btn secondary" id="signUpBtn">Create account</button>
+    <button class="add-btn secondary" id="localOnlyBtn">Continue without account</button>
     <div class="auth-msg" id="authMsg"></div>
   `;
 
@@ -38,6 +67,12 @@ export function renderAuthOverlay({ onSession }) {
     } catch (e) {
       msg.textContent = e.message || 'Sign in failed.';
     }
+  });
+
+  el.querySelector('#localOnlyBtn').addEventListener('click', () => {
+    setLocalOnly();
+    el.remove();
+    if (onLocalOnly) onLocalOnly();
   });
 
   el.querySelector('#signUpBtn').addEventListener('click', async () => {

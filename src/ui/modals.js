@@ -2,6 +2,8 @@ import { EVIDENCE } from '../data/evidence.js';
 import { PROGRAM } from '../data/program.js';
 import { calculateTargets, totalsForDay, todayKey } from '../lib/nutrition.js';
 import { ctx } from './ctx.js';
+import { isConfigured } from '../sync/supabase.js';
+import { isLocalOnly } from './auth.js';
 
 function open(html) {
   document.getElementById('modalContent').innerHTML = html;
@@ -18,7 +20,19 @@ export function setupModal() {
   });
 }
 
-export function openGuide() {
+export function openGuide({ onReconnect } = {}) {
+  // Offer a way back into cloud sync, but only when it's actually actionable:
+  // Supabase is configured and the user previously chose "Continue without
+  // account". Signed-in users and pure local builds don't see it.
+  const showReconnect = onReconnect && isConfigured() && isLocalOnly();
+  const reconnectSection = showReconnect ? `
+    <h2 style="margin-top: 24px;">Sync</h2>
+    <div class="sub">You're using this device-only</div>
+    <p style="color: var(--ink-dim); font-size: 12px; line-height: 1.6; margin-bottom: 12px;">
+      Your data lives on this device. Sign in to back it up and sync across devices.
+    </p>
+    <button class="nav-btn primary" style="width: 100%;" id="reconnectBtn">Sign in / sync</button>
+  ` : '';
   open(`
     <h2>How To Use This App</h2>
     <div class="sub">An evidence-aligned 8-week protocol</div>
@@ -59,9 +73,16 @@ export function openGuide() {
         <div class="ref">${e.ref}</div>
       </div>
     `).join('')}
+    ${reconnectSection}
     <button class="nav-btn primary" style="width: 100%; margin-top: 16px;" id="closeBtn">Got it</button>
   `);
   document.getElementById('closeBtn').addEventListener('click', close);
+  if (showReconnect) {
+    document.getElementById('reconnectBtn').addEventListener('click', () => {
+      close();
+      onReconnect();
+    });
+  }
 }
 
 export function openHistory() {
