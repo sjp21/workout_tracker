@@ -195,12 +195,12 @@ function renderProfileSetup() {
       <h3>Set up your profile</h3>
       <div class="desc">We calculate your daily calories using the Mifflin-St Jeor equation (the most accurate validated RMR formula), then set protein per Morton 2018 and adjust your deficit per Murphy 2022.</div>
       <div class="profile-grid">
-        <div><label>Weight (lb)</label><input type="number" inputmode="decimal" id="p-weight" placeholder="190" /></div>
-        <div><label>Height (in)</label><input type="number" inputmode="numeric" id="p-height" placeholder="75" /></div>
-        <div><label>Age</label><input type="number" inputmode="numeric" id="p-age" placeholder="26" /></div>
+        <div><label>Weight (lb)</label><input type="number" inputmode="decimal" id="p-weight" placeholder="180" /></div>
+        <div><label>Height (in)</label><input type="number" inputmode="numeric" id="p-height" placeholder="70" /></div>
+        <div><label>Age</label><input type="number" inputmode="numeric" id="p-age" placeholder="35" /></div>
         <div><label>Sex</label><select id="p-sex"><option value="male">Male</option><option value="female">Female</option></select></div>
         <div><label>Activity</label><select id="p-activity"><option value="light">Light (1-3x/wk)</option><option value="moderate" selected>Moderate (3-5x/wk)</option><option value="very">Very active (6+x/wk)</option></select></div>
-        <div><label>Goal</label><select id="p-goal"><option value="cut" selected>Cut fat</option><option value="maintain">Maintain</option><option value="gain">Lean gain</option></select></div>
+        <div><label>Goal</label><select id="p-goal"><option value="maintain" selected>Maintain</option><option value="cut">Cut fat</option><option value="gain">Lean gain</option></select></div>
       </div>
       <button class="add-btn" id="saveProfileBtn">Calculate Targets</button>
     </div>
