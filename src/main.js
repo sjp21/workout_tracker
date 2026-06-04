@@ -56,6 +56,9 @@ function handleSyncStatus(status) {
     syncFailing = false;
     bannerDismissed = false;
     hideSyncErrorBanner();
+    // A fully-flushed push leaves nothing queued; reconcile the in-memory flag
+    // the badge reads (markClean only persisted it to IndexedDB).
+    if (status.flushed && ctx.state) ctx.state.dirty = false;
   }
   updateSyncIndicator();
 }

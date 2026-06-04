@@ -63,11 +63,13 @@ async function tryPush() {
     const result = await pushOnce(snapshot);
     if (result.ok) {
       consecutiveFailures = 0;
-      emit({ status: 'ok' });
       if (pendingState === snapshot) {
         pendingState = null;
         await markClean(new Date().toISOString());
       }
+      // `flushed` lets the UI clear its in-memory dirty flag once nothing is
+      // queued, so the badge can settle on "synced" without a reload.
+      emit({ status: 'ok', flushed: pendingState === null });
     } else if (result.reason === 'error') {
       consecutiveFailures += 1;
       if (consecutiveFailures >= FAIL_THRESHOLD) {
