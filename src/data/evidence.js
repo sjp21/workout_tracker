@@ -54,6 +54,24 @@ export const EVIDENCE = [
     ref: 'Scand J Med Sci Sports · PMID: 34623696 · used for: caloric deficit target'
   },
   {
+    study: 'Bull et al. (2020) — WHO 2020 guidelines',
+    finding:
+      'WHO guidelines on physical activity: adults should accumulate 150–300 min/week of moderate-intensity aerobic activity (or 75–150 min vigorous) for substantial health benefits, including cardiovascular health. This sets the cardio ramp’s floor (150) and cap (300).',
+    ref: 'Br J Sports Med · PMID: 33239350 · used for: weekly zone-2 minute targets'
+  },
+  {
+    study: 'Garber et al. (2011) — ACSM position stand',
+    finding:
+      'ACSM guidance on developing cardiorespiratory fitness: progress gradually by adjusting duration and frequency before intensity, which improves adherence and reduces injury risk in deconditioned or returning exercisers.',
+    ref: 'Med Sci Sports Exerc · PMID: 21694556 · used for: ramp order (duration/frequency before intensity)'
+  },
+  {
+    study: 'Helgerud et al. (2007)',
+    finding:
+      '4×4-minute interval training (4 min at ~90–95% HRmax, 3 min active recovery) improved VO₂max significantly more than moderate continuous training at equated work. The basis for the optional vigorous-session swap once 150+ min/wk is consistent.',
+    ref: 'Med Sci Sports Exerc · PMID: 17414804 · used for: optional 4×4 vigorous session'
+  },
+  {
     study: 'Schoenfeld & Aragon (2018)',
     finding:
       'Review of per-meal protein utilization for muscle anabolism. Conclusion: 0.4 g/kg protein per meal across ≥4 meals optimizes muscle protein synthesis. For upper intake of 2.2 g/kg/day, 0.55 g/kg per meal across 4 meals.',

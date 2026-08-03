@@ -1,6 +1,7 @@
 import { EVIDENCE } from '../data/evidence.js';
 import { PROGRAM } from '../data/program.js';
 import { calculateTargets, totalsForDay, todayKey } from '../lib/nutrition.js';
+import { weekStats, feltBetterRate } from '../lib/cardio.js';
 import { ctx } from './ctx.js';
 import { isConfigured } from '../sync/supabase.js';
 import { isLocalOnly } from './auth.js';
@@ -83,6 +84,120 @@ export function openGuide({ onReconnect } = {}) {
       onReconnect();
     });
   }
+}
+
+// Quick-log for a cardio session. Save requires only duration + RPE; distance,
+// mood, and note are optional and skipping them never blocks. Distance is
+// display-only — the engine never reads it.
+export function openCardioLog({ onSaved } = {}) {
+  const MOODS = [
+    { key: 'worse', label: 'worse' },
+    { key: 'same', label: 'same' },
+    { key: 'better', label: 'better' },
+    { key: 'much_better', label: 'much better' }
+  ];
+  open(`
+    <h2>Log cardio</h2>
+    <div class="sub">zone 2 — you can speak full sentences</div>
+    <div class="food-form" style="margin-bottom:0;">
+      <div class="food-form-row">
+        <div>
+          <label class="field-label">Duration (min) — required</label>
+          <input type="number" inputmode="numeric" id="cdMin" placeholder="e.g. 25" />
+        </div>
+        <div>
+          <label class="field-label">RPE 0–10 — required · zone 2 ≈ 3–4 (full sentences ok)</label>
+          <input type="number" inputmode="numeric" id="cdRpe" min="0" max="10" placeholder="3" />
+        </div>
+        <div>
+          <label class="field-label">Distance (km) — optional, display only</label>
+          <input type="number" inputmode="decimal" step="0.1" id="cdKm" placeholder="—" />
+        </div>
+        <div>
+          <label class="field-label">Mood after — optional</label>
+          <div class="mood-row">
+            ${MOODS.map((m) => `<button type="button" class="mood-btn" data-mood="${m.key}">${m.label}</button>`).join('')}
+          </div>
+        </div>
+        <div>
+          <label class="field-label">Note — optional</label>
+          <input type="text" id="cdNote" placeholder="" />
+        </div>
+      </div>
+      <button class="add-btn" id="cdSave">Save session</button>
+    </div>
+  `);
+
+  let mood = null;
+  document.querySelectorAll('.mood-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const next = btn.dataset.mood === mood ? null : btn.dataset.mood;
+      mood = next;
+      document.querySelectorAll('.mood-btn').forEach((b) =>
+        b.classList.toggle('sel', b.dataset.mood === mood));
+    });
+  });
+
+  document.getElementById('cdSave').addEventListener('click', () => {
+    const minutes = parseInt(document.getElementById('cdMin').value, 10);
+    const rpe = parseInt(document.getElementById('cdRpe').value, 10);
+    if (!minutes || minutes < 1 || minutes > 600) return alert('Enter a duration between 1 and 600 minutes.');
+    if (Number.isNaN(rpe) || rpe < 0 || rpe > 10) return alert('Enter an RPE from 0 to 10. Zone 2 feels like 3–4 — you can speak full sentences.');
+    const km = parseFloat(document.getElementById('cdKm').value);
+    const note = document.getElementById('cdNote').value.trim();
+
+    const session = { date: todayKey(), minutes, rpe };
+    if (km > 0) session.distanceKm = km;
+    if (mood) session.mood = mood;
+    if (note) session.note = note;
+
+    ctx.state.cardio.sessions.push(session);
+    ctx.commit();
+    close();
+    if (onSaved) onSaved();
+  });
+}
+
+// Recent weeks: engine target vs actual minutes + session count, newest first,
+// plus the personal felt-better rate once enough mood taps exist (labeled as
+// the user's own pattern — never a mechanism claim).
+export function openCardioHistory() {
+  const cardio = ctx.state.cardio || { targetHistory: [], sessions: [] };
+  const weeks = (cardio.targetHistory || []).slice(-8).reverse();
+  const rate = feltBetterRate(cardio.sessions);
+
+  if (weeks.length === 0 && (cardio.sessions || []).length === 0) {
+    open(`
+      <h2>Cardio</h2>
+      <div class="sub">No sessions yet</div>
+      <p style="color: var(--ink-dim); font-size: 12px; line-height: 1.6;">
+        Log walks or runs from the Today card. Weekly minutes vs target will show here once you have history.
+      </p>
+      <button class="nav-btn primary" style="width:100%; margin-top:16px;" id="closeBtn">Close</button>
+    `);
+    document.getElementById('closeBtn').addEventListener('click', close);
+    return;
+  }
+
+  open(`
+    <h2>Cardio History</h2>
+    <div class="sub">weekly minutes vs target · Mon-anchored</div>
+    ${rate ? `
+      <div style="background: var(--panel-2); padding: 12px 14px; border-radius: 10px; margin-bottom: 14px; font-size: 12px; line-height: 1.5;">
+        You tapped "better" or "much better" after <strong style="color: var(--accent);">${rate.pct}%</strong> of ${rate.n} rated sessions — your own logged pattern.
+      </div>
+    ` : ''}
+    ${weeks.map(({ week, target }) => {
+      const { minutes, count } = weekStats(cardio.sessions, week);
+      const label = new Date(week + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      return `<div class="hist-row">
+        <div class="date">wk of ${label}</div>
+        <div class="data">${minutes} / ${target} min · ${count} session${count === 1 ? '' : 's'}</div>
+      </div>`;
+    }).join('')}
+    <button class="nav-btn primary" style="width: 100%; margin-top: 16px;" id="closeBtn">Close</button>
+  `);
+  document.getElementById('closeBtn').addEventListener('click', close);
 }
 
 export function openHistory() {

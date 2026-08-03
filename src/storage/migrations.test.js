@@ -16,6 +16,20 @@ describe('migrations', () => {
     expect(migrate(undefined)).toBeNull();
   });
 
+  it('v1 → v2 adds the default cardio block and preserves the rest', () => {
+    const v1 = { ...defaultState(), schemaVersion: 1, history: { dbBench: [{ date: '2026-06-01', sets: [] }] } };
+    delete v1.cardio;
+    const out = migrate(v1);
+    expect(out.schemaVersion).toBe(CURRENT_SCHEMA);
+    expect(out.cardio).toEqual({
+      weeklyTargetMin: 60,
+      vigorousUnlocked: false,
+      targetHistory: [],
+      sessions: []
+    });
+    expect(out.history.dbBench).toHaveLength(1);
+  });
+
   it('migration steps are contiguous (from + 1 === to)', () => {
     MIGRATIONS.forEach((m) => expect(m.to).toBe(m.from + 1));
   });

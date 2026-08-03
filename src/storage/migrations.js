@@ -5,10 +5,28 @@
 // To add a migration: append { from: N, to: N+1, run(state) { ... } }.
 // `to` must always equal `from + 1`. Versions must be contiguous.
 
-export const CURRENT_SCHEMA = 1;
+export const CURRENT_SCHEMA = 2;
+
+// Default cardio block (schemaVersion 2). weeklyTargetMin is engine-managed
+// but user-overridable; targetHistory is the engine's append-only weekly
+// { week, target } ledger (see src/lib/cardio.js rollTargets).
+export function defaultCardio() {
+  return {
+    weeklyTargetMin: 60,
+    vigorousUnlocked: false,
+    targetHistory: [],
+    sessions: []
+  };
+}
 
 export const MIGRATIONS = [
-  // No migrations on day 1. The shape of `defaultState` IS schemaVersion 1.
+  {
+    from: 1,
+    to: 2,
+    run(state) {
+      return { ...state, cardio: defaultCardio() };
+    }
+  }
 ];
 
 export function migrate(state) {
@@ -37,6 +55,7 @@ export function defaultState() {
     profile: null,
     foodLog: {},
     bodyweight: [],
+    cardio: defaultCardio(),
     uiState: { openFoodCategories: ['Protein'] },
     dirty: false,
     lastSyncedAt: null

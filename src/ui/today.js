@@ -1,19 +1,47 @@
 import { PROGRAM, MUSCLE_GROUPS } from '../data/program.js';
 import { calculateTargets, totalsForDay, todayKey } from '../lib/nutrition.js';
 import { weeklyVolume, volumeStatus, mondayOf } from '../lib/volume.js';
+import { weekStats, rollTargets, suggestWeek, vigorousOffer, VIGOROUS_OFFER_COPY, SESSION_FLOOR } from '../lib/cardio.js';
+import { defaultCardio } from '../storage/migrations.js';
 import { ctx } from './ctx.js';
+import { openCardioLog, openCardioHistory } from './modals.js';
 
 export function renderToday({ goTrain, goFuel }) {
+  const rerender = () => renderToday({ goTrain, goFuel });
+
+  // Roll the cardio target ledger up to the current week (Monday boundary).
+  // The migration guarantees state.cardio exists; the guard covers a remote
+  // blob that predates v2 sneaking past it.
+  if (!ctx.state.cardio) ctx.state.cardio = defaultCardio();
+  const roll = rollTargets(ctx.state.cardio, new Date());
+  if (roll.changed) {
+    ctx.state.cardio.weeklyTargetMin = roll.weeklyTargetMin;
+    ctx.state.cardio.targetHistory = roll.targetHistory;
+    ctx.commit();
+  }
+
   const view = document.getElementById('todayView');
   view.innerHTML = `
     ${renderBodyweightCard()}
     ${renderTrainingCard()}
+    ${renderCardioCard()}
     ${renderFuelCard()}
     ${renderVolumeCard()}
   `;
 
   view.querySelectorAll('[data-action="goTrain"]').forEach((el) => el.addEventListener('click', goTrain));
   view.querySelectorAll('[data-action="goFuel"]').forEach((el) => el.addEventListener('click', goFuel));
+
+  view.querySelectorAll('[data-action="logCardio"]').forEach((el) =>
+    el.addEventListener('click', () => openCardioLog({ onSaved: rerender })));
+  view.querySelectorAll('[data-action="cardioHistory"]').forEach((el) =>
+    el.addEventListener('click', openCardioHistory));
+  view.querySelectorAll('[data-action="unlockVigorous"]').forEach((el) =>
+    el.addEventListener('click', () => {
+      ctx.state.cardio.vigorousUnlocked = true;
+      ctx.commit();
+      rerender();
+    }));
 
   // Start the rotation over at Day 1 — Push. Resets only the "next workout"
   // cursor; logged history stays untouched ("save the current week as is").
@@ -106,6 +134,37 @@ function renderTrainingCard() {
       <div class="tc-stat" style="margin-top:8px;">${doneSets}<span class="unit">/ ${totalSets} sets</span></div>
       <button class="tc-action primary" data-action="goTrain">${doneSets > 0 ? 'Continue session' : 'Start session'}</button>
       <button class="tc-action" data-action="resetWeek">Start week over</button>
+    </div>
+  `;
+}
+
+// Cardio card: weekly zone-2 minutes vs the engine-managed target, Mon-anchored.
+// Tap the headline for the recent-weeks history; the engine's target-change
+// message shows all week, citation included, like lifting's suggestNext.
+function renderCardioCard() {
+  const cardio = ctx.state.cardio;
+  const week = mondayOf(todayKey());
+  const { minutes, count } = weekStats(cardio.sessions, week);
+  const target = cardio.weeklyTargetMin;
+  // Plan: surface the engine's message when it CHANGES the target (plus the
+  // starting message). A plain hold stays quiet — the headline carries it.
+  const s = suggestWeek(cardio, new Date());
+  const suggestion = s && s.action !== 'hold' ? s : null;
+  const offer = vigorousOffer(cardio, new Date());
+
+  return `
+    <div class="today-card">
+      <div class="tc-head" data-action="cardioHistory" style="cursor:pointer;">
+        <div class="tc-title">Cardio</div>
+        <div class="tc-sub">zone 2 · talk-test pace${cardio.vigorousUnlocked ? ' · 4×4 ok' : ''}</div>
+      </div>
+      <div class="tc-stat" data-action="cardioHistory" style="cursor:pointer;">${minutes}<span class="unit">/ ${target} min · ${count} of ${SESSION_FLOOR} sessions</span></div>
+      ${suggestion ? `<div class="cardio-suggest">${suggestion.message}</div>` : ''}
+      ${offer ? `
+        <div class="cardio-suggest">${VIGOROUS_OFFER_COPY}</div>
+        <button class="tc-action" data-action="unlockVigorous">Add 4×4 as an option</button>
+      ` : ''}
+      <button class="tc-action primary" data-action="logCardio">Log session</button>
     </div>
   `;
 }

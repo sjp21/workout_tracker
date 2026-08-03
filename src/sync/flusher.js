@@ -1,5 +1,5 @@
 import { supabase, isConfigured } from './supabase.js';
-import { markClean } from '../storage/index.js';
+import { markClean, migrate } from '../storage/index.js';
 
 // Background dirty-flag flusher. Local-first: every mutation sets state.dirty
 // via storage.save(). This module retries pushing the latest snapshot to
@@ -92,7 +92,10 @@ export async function pullRemoteIntoState(state) {
     .eq('user_id', user.id)
     .maybeSingle();
   if (error || !data) return state;
-  return data.state;
+  // The cloud copy may have been pushed by an older client at a lower
+  // schemaVersion. Migrate before handing it to the app — callers save() it,
+  // which stamps CURRENT_SCHEMA without transforming.
+  return migrate(data.state) ?? state;
 }
 
 export function startFlusher() {

@@ -24,13 +24,45 @@ beforeEach(() => {
 });
 
 describe('renderers smoke', () => {
-  it('renderToday produces all four cards with no profile', () => {
+  it('renderToday produces all five cards with no profile', () => {
     renderToday({ goTrain: () => {}, goFuel: () => {} });
     const html = document.getElementById('todayView').innerHTML;
     expect(html).toContain('Weekly weigh-in');
     expect(html).toContain("Today's training");
+    expect(html).toContain('Cardio');
     expect(html).toContain('Fuel');
     expect(html).toContain('Weekly volume');
+  });
+
+  it('renderToday rolls the cardio target ledger for the current week', () => {
+    renderToday({ goTrain: () => {}, goFuel: () => {} });
+    expect(ctx.state.cardio.targetHistory).toHaveLength(1);
+    expect(ctx.state.cardio.targetHistory[0].target).toBe(60);
+    const html = document.getElementById('todayView').innerHTML;
+    expect(html).toContain('/ 60 min');
+    expect(html).toContain('0 of 3 sessions');
+  });
+
+  it('cardio log modal saves a session with duration + RPE only', () => {
+    let committed = null;
+    ctx.bind(defaultState(), (s) => { committed = s; });
+    renderToday({ goTrain: () => {}, goFuel: () => {} });
+    document.querySelector('[data-action="logCardio"]').click();
+    expect(document.getElementById('modal').classList.contains('open')).toBe(true);
+
+    document.getElementById('cdMin').value = '25';
+    document.getElementById('cdRpe').value = '3';
+    document.querySelector('.mood-btn[data-mood="better"]').click();
+    document.getElementById('cdSave').click();
+
+    expect(ctx.state.cardio.sessions).toHaveLength(1);
+    const s = ctx.state.cardio.sessions[0];
+    expect(s.minutes).toBe(25);
+    expect(s.rpe).toBe(3);
+    expect(s.mood).toBe('better');
+    expect(s.distanceKm).toBeUndefined();
+    expect(committed).not.toBeNull();
+    expect(document.getElementById('modal').classList.contains('open')).toBe(false);
   });
 
   it('renderToday shows fueled card when profile set', () => {
