@@ -1,4 +1,4 @@
-import { PROGRAM } from '../data/program.js';
+import { PROGRAM, LOADS } from '../data/program.js';
 import { suggestNext } from '../lib/progression.js';
 import { nextDayIdx } from '../lib/rotation.js';
 import * as rest from './restTimer.js';
@@ -96,6 +96,15 @@ export function renderDay() {
   });
 }
 
+const ACTION_LABELS = {
+  up: '+ progress',
+  down: '↓ deload',
+  hold: '→ hold',
+  cap: '⤒ go harder',
+  restart: '↺ ease in'
+};
+const ACTION_CLASS = { up: 'up', cap: 'up', down: 'down', restart: 'down', hold: 'hold' };
+
 function renderExercise(ex) {
   const sug = suggestNext(ex, ctx.state.history[ex.id]);
   const sets = ctx.state.currentSession[ex.id];
@@ -111,12 +120,13 @@ function renderExercise(ex) {
           <div class="ex-tags">
             ${ex.tags.map((t) => `<span class="ex-tag">${t}</span>`).join('')}
             <span class="ex-tag">${ex.sets}×${ex.repLow}–${ex.repHigh}</span>
+            ${LOADS[ex.load] ? `<span class="ex-tag">${LOADS[ex.load].label}</span>` : ''}
             <span class="ex-tag">${ex.rest}s rest</span>
           </div>
         </div>
         <div class="ex-suggest">
-          <div class="weight">${sug.weight !== null ? sug.weight + ' lb' : '—'}</div>
-          <div class="label">${sug.action === 'up' ? '+ progress' : sug.action === 'down' ? '↓ deload' : sug.action === 'hold' ? '→ hold' : 'start here'}</div>
+          <div class="weight">${sug.weight !== null ? sug.weight + ' lb' : ex.load === 'bw' ? 'BW' : '—'}</div>
+          <div class="label">${ACTION_LABELS[sug.action] || 'start here'}</div>
         </div>
       </div>
       <div class="ex-body">
@@ -139,7 +149,7 @@ function renderExercise(ex) {
             </button>
           </div>
         `).join('')}
-        <div class="progress-suggest ${sug.action === 'up' ? 'up' : sug.action === 'down' ? 'down' : 'hold'}">
+        <div class="progress-suggest ${ACTION_CLASS[sug.action] || 'hold'}">
           ${sug.message}
         </div>
       </div>
@@ -191,7 +201,7 @@ export function saveSession({ onSaved }) {
   });
   ctx.state.currentSession = {};
   // Advance the rotation cursor to the next day after the one just completed,
-  // wrapping Upper → Push. The cursor is what "today's training" reads, so this
+  // wrapping Lower B → Upper A. The cursor is what "today's training" reads, so this
   // is what makes the next session follow the sequence regardless of weekday.
   if (saved > 0) {
     ctx.state.currentDayIdx = nextDayIdx(viewDayIdx, PROGRAM.length);

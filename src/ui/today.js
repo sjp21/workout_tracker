@@ -43,10 +43,10 @@ export function renderToday({ goTrain, goFuel }) {
       rerender();
     }));
 
-  // Start the rotation over at Day 1 — Push. Resets only the "next workout"
+  // Start the rotation over at Day 1 — Upper A. Resets only the "next workout"
   // cursor; logged history stays untouched ("save the current week as is").
   view.querySelectorAll('[data-action="resetWeek"]').forEach((el) => el.addEventListener('click', () => {
-    if (!confirm('Start the week over at Day 1 — Push?\n\nYour logged history is kept; this only resets which workout comes next.')) return;
+    if (!confirm('Start the week over at Day 1 — Upper A?\n\nYour logged history is kept; this only resets which workout comes next.')) return;
     ctx.state.currentDayIdx = 0;
     ctx.commit();
     renderToday({ goTrain, goFuel });

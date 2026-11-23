@@ -77,7 +77,7 @@ describe('renderers smoke', () => {
     renderTabs();
     renderDay();
     expect(document.getElementById('dayTabs').children.length).toBe(4);
-    expect(document.getElementById('dayView').innerHTML).toContain('Push');
+    expect(document.getElementById('dayView').innerHTML).toContain('Upper A');
   });
 
   it('renderFuel shows profile setup when no profile', () => {

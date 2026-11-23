@@ -46,21 +46,26 @@ export function openGuide({ onReconnect } = {}) {
     </div>
     <div class="guide-section">
       <h3><span class="guide-num">1</span>Train 4 days per week</h3>
-      <p>The program cycles Push → Pull → Legs → Upper. Hit each session once per week.</p>
-      <div class="why"><strong>Why 4 days:</strong> Schoenfeld 2019's meta-analysis showed frequency doesn't change hypertrophy when volume is equated. 4 sessions is the lowest frequency that still hits the 10+ sets/muscle/week threshold.</div>
+      <p>The program cycles Upper A → Lower A → Upper B → Lower B, so every muscle is trained twice a week. Hit each session once per week.</p>
+      <div class="why"><strong>Why 4 days:</strong> Schoenfeld 2019's meta-analysis showed frequency doesn't change hypertrophy when volume is equated. Four sessions is enough to reach ~10 sets/muscle/week without any session running long.</div>
     </div>
     <div class="guide-section">
-      <h3><span class="guide-num">2</span>Log every set with honest RIR</h3>
+      <h3><span class="guide-num">2</span>When the dumbbells max out, reps take over</h3>
+      <p>Lifts with two dumbbells move in 5 lb steps and top out at 50 lb each. Lifts with one dumbbell move in 2.5 lb steps up to 55. Once you hit the ceiling, the app keeps the weight and raises your rep target. When you max that too, it gives you a harder version of the lift.</p>
+      <div class="why"><strong>Why reps work:</strong> Schoenfeld 2017's load meta-analysis — anything from ~30% to ~85% of 1RM builds equal muscle when sets end close to failure.</div>
+    </div>
+    <div class="guide-section">
+      <h3><span class="guide-num">3</span>Log every set with honest RIR</h3>
       <p>Target RIR is 2 on your first work set, 1 on your last. The auto-progression depends on it.</p>
       <div class="why"><strong>Why RIR matters:</strong> Refalo 2022 found RIR 1–3 matches failure-training for muscle growth with less burnout.</div>
     </div>
     <div class="guide-section">
-      <h3><span class="guide-num">3</span>Rest the full prescribed time</h3>
+      <h3><span class="guide-num">4</span>Rest the full prescribed time</h3>
       <p>When you mark a set complete, a countdown auto-starts under that set. Beeps + vibrates at zero.</p>
       <div class="why"><strong>Why long rest:</strong> Schoenfeld 2016 — 3-min rest beat 1-min rest for hypertrophy in trained men.</div>
     </div>
     <div class="guide-section">
-      <h3><span class="guide-num">4</span>Hit protein every day</h3>
+      <h3><span class="guide-num">5</span>Hit protein every day</h3>
       <p>Distribute it across 4 meals with roughly equal amounts each.</p>
       <div class="why"><strong>Why distributed protein:</strong> Schoenfeld & Aragon 2018 — 0.4 g/kg per meal across ≥4 meals optimizes MPS.</div>
     </div>

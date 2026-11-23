@@ -2,7 +2,7 @@
 
 Evidence-based dumbbell hypertrophy + nutrition tracker. iPhone-only PWA, single user.
 
-See [`BUILD_PLAN.md`](./BUILD_PLAN.md) for the locked design contract.
+See [`home_plan.md`](./home_plan.md) for the current program and equipment rules.
 
 ## Dev
 
